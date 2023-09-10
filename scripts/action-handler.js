@@ -275,8 +275,8 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 						: "";
 					const cssClass = `toggle${active}`;
 					const img = coreModule.api.Utils.getImage(condition);
-					const tooltipData = await this.#getConditionTooltipData(id, name);
-					const tooltip = await this.#getTooltip(tooltipData);
+					const tooltipData = this.#getConditionTooltipData(id, name);
+					const tooltip = this.#getTooltip(tooltipData);
 					return {
 						id,
 						name,
@@ -979,7 +979,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		 * @param {*} name   The condition name
 		 * @returns {object} The tooltip data
 		 */
-		async #getConditionTooltipData(id, name) {
+		#getConditionTooltipData(id, name) {
 			if (this.showtooltip === false) return "";
 			const description = CONDITION[id] ? CONDITION[id]?.description : null;
 			return {
@@ -992,7 +992,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		 * @param {object} tooltipData The tooltip data
 		 * @returns {string}           The tooltip
 		 */
-		async #getTooltip(tooltipData) {
+		#getTooltip(tooltipData) {
 			if (this.showtooltip === false) return "";
 			// if (typeof tooltipData === 'string') return tooltipData;
 
@@ -1003,7 +1003,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			const nameHtml = `<h3>${name}</h3>`;
 
 			const description =
-				tooltipData?.descriptionLocalised ?? TextEditor.enrichHTML(coreModule.api.Utils.i18n(tooltipData?.description ?? ""), { async: true });
+				tooltipData?.descriptionLocalised ?? TextEditor.enrichHTML(coreModule.api.Utils.i18n(tooltipData?.description ?? ""), { async: false });
 
 			const rarityHtml = tooltipData?.rarity
 				? `<span class="tah-tag ${tooltipData.rarity}">${coreModule.api.Utils.i18n(RARITY[tooltipData.rarity])}</span>`
