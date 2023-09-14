@@ -26,10 +26,6 @@ For questions, feature requests or bug reports, please open an issue [here](http
 
 Pull requests are welcome. Please include a reason for the request or create an issue before starting one.
 
-# Acknowledgements
-
-Thank you to the Community Helpers on Foundry's Discord who provide tireless support for people seeking help with the HUD.
-
 # License
 
 This Foundry VTT module is licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/) and this work is licensed under [Foundry Virtual Tabletop EULA - Limited License Agreement for module development](https://foundryvtt.com/article/license/).
