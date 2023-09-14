@@ -165,12 +165,18 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 
 				// Get actions
 				const actions = [...typeMap].map(([itemId, itemData]) => {
+					let name = "";
 					const id = itemId;
 					const img = coreModule.api.Utils.getImage(itemData);
-					const name = itemData.name;
+					if (itemData.type === "armor") {
+						name = itemData.name + " " + "-" + " " + itemData.system.attributes.armorrating.value;
+					} else {
+						name = itemData.name;
+					}
 					const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
 					const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
 					const encodedValue = [actionTypeId, id].join(this.delimiter);
+					const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
 
 					return {
 						id,
@@ -178,6 +184,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 						img,
 						listName,
 						encodedValue,
+						tooltip,
 					};
 				});
 
@@ -227,6 +234,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 					const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
 					const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
 					const encodedValue = [actionTypeId, id].join(this.delimiter);
+					const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
 
 					return {
 						id,
@@ -234,6 +242,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 						img,
 						listName,
 						encodedValue,
+						tooltip,
 					};
 				});
 
@@ -369,13 +378,13 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 						const listName = `${actionTypeName}${game.alienrpg.config.skills[id]}`;
 						const encodedValue = [actionType, id].join(this.delimiter);
 						// const mod = skills[id].total
-						// const info1 = (this.actor) ? { text: (mod || mod === 0) ? `${(mod >= 0) ? '+' : ''}${mod}` : '' } : ''
+						const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
 						return {
 							id,
 							name,
 							encodedValue,
-							// info1,
 							listName,
+							tooltip,
 						};
 					} catch (error) {
 						coreModule.api.Logger.error(skill);
@@ -412,13 +421,13 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 						const listName = `${actionTypeName}${game.alienrpg.config.attributes[id]}`;
 						const encodedValue = [actionType, id].join(this.delimiter);
 						// const mod = attributes[id].total
-						// const info1 = (this.actor) ? { text: (mod || mod === 0) ? `${(mod >= 0) ? '+' : ''}${mod}` : '' } : ''
+						const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
 						return {
 							id,
 							name,
 							encodedValue,
-							// info1,
 							listName,
+							tooltip,
 						};
 					} catch (error) {
 						coreModule.api.Logger.error(attributes);
@@ -462,13 +471,13 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 						const listName = `${actionTypeName}${game.alienrpg.config.vehicleattributes[id]}`;
 						const encodedValue = [actionType, id].join(this.delimiter);
 						// const mod = attributes[id].total
-						// const info1 = (this.actor) ? { text: (mod || mod === 0) ? `${(mod >= 0) ? '+' : ''}${mod}` : '' } : ''
+						const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
 						return {
 							id,
 							name,
 							encodedValue,
-							// info1,
 							listName,
+							tooltip,
 						};
 					} catch (error) {
 						coreModule.api.Logger.error(myattributes);
@@ -569,13 +578,13 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 						const listName = `${actionTypeName}${game.alienrpg.config.creatureattributes[id]}`;
 						const encodedValue = [actionType, id].join(this.delimiter);
 						// const mod = attributes[id].total
-						// const info1 = (this.actor) ? { text: (mod || mod === 0) ? `${(mod >= 0) ? '+' : ''}${mod}` : '' } : ''
+						const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
 						return {
 							id,
 							name,
 							encodedValue,
-							// info1,
 							listName,
+							tooltip,
 						};
 					} catch (error) {
 						coreModule.api.Logger.error(myattributes);
@@ -622,13 +631,13 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 						const listName = `${actionTypeName}${game.alienrpg.config.creaturedefence[id]}`;
 						const encodedValue = [actionType, id].join(this.delimiter);
 						// const mod = attributes[id].total
-						// const info1 = (this.actor) ? { text: (mod || mod === 0) ? `${(mod >= 0) ? '+' : ''}${mod}` : '' } : ''
+						const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
 						return {
 							id,
 							name,
 							encodedValue,
-							// info1,
 							listName,
+							tooltip,
 						};
 					} catch (error) {
 						coreModule.api.Logger.error(defence);
@@ -753,12 +762,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
 			const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
 			const encodedValue = [actionTypeId, id].join(this.delimiter);
+			const tooltip = coreModule.api.Utils.i18n("ALIENRPG.ConButtons");
 			const actions = [
 				{
 					id,
 					name,
 					listName,
 					encodedValue,
+					tooltip,
 				},
 			];
 			// TAH Core method to add actions to the action list
@@ -781,12 +792,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
 			const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
 			const encodedValue = [actionTypeId, id].join(this.delimiter);
+			const tooltip = coreModule.api.Utils.i18n("ALIENRPG.ConButtons");
 			const actions = [
 				{
 					id,
 					name,
 					listName,
 					encodedValue,
+					tooltip,
 				},
 			];
 			// TAH Core method to add actions to the action list
@@ -809,12 +822,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
 			const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
 			const encodedValue = [actionTypeId, id].join(this.delimiter);
+			const tooltip = coreModule.api.Utils.i18n("ALIENRPG.ConButtons");
 			const actions = [
 				{
 					id,
 					name,
 					listName,
 					encodedValue,
+					tooltip,
 				},
 			];
 			// TAH Core method to add actions to the action list
@@ -836,12 +851,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
 			const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
 			const encodedValue = [actionTypeId, id].join(this.delimiter);
+			const tooltip = coreModule.api.Utils.i18n("ALIENRPG.ConButtons");
 			const actions = [
 				{
 					id,
 					name,
 					listName,
 					encodedValue,
+					tooltip,
 				},
 			];
 			// TAH Core method to add actions to the action list
@@ -861,12 +878,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
 			const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
 			const encodedValue = [actionTypeId, id].join(this.delimiter);
+			const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
 			const actions = [
 				{
 					id,
 					name,
 					listName,
 					encodedValue,
+					tooltip,
 				},
 			];
 			// TAH Core method to add actions to the action list
@@ -885,12 +904,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
 			const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
 			const encodedValue = [actionTypeId, id].join(this.delimiter);
+			const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
 			const actions = [
 				{
 					id,
 					name,
 					listName,
 					encodedValue,
+					tooltip,
 				},
 			];
 			// TAH Core method to add actions to the action list
@@ -909,12 +930,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
 			const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
 			const encodedValue = [actionTypeId, id].join(this.delimiter);
+			const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
 			const actions = [
 				{
 					id,
 					name,
 					listName,
 					encodedValue,
+					tooltip,
 				},
 			];
 			// TAH Core method to add actions to the action list
@@ -930,12 +953,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
 			const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
 			const encodedValue = [actionTypeId, id].join(this.delimiter);
+			const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
 			const actions = [
 				{
 					id,
 					name,
 					listName,
 					encodedValue,
+					tooltip,
 				},
 			];
 			// TAH Core method to add actions to the action list

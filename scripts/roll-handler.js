@@ -406,7 +406,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 							case "panic":
 								{
 									if (value <= 0) return;
-									actor.checkAndEndPanic(actor);
+									await actor.checkAndEndPanic(actor);
 									update = {
 										data: { general: { [property]: { [valueName]: 0 } } },
 									};
