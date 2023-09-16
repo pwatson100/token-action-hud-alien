@@ -1,0 +1,7 @@
+Version 1.0.1
+Creature attacks not rolling on the correct table.
+Skills now show the roll total (attribute+skill+modifiers).
+Attribute rolls now show the pop-up to exclude Stress dice.
+
+Version 1.0.0
+Initial release

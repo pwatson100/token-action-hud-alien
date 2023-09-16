@@ -373,7 +373,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 					try {
 						const id = skill[0];
 						// const abbreviatedName = id.charAt(0).toUpperCase() + id.slice(1);
-						const name = game.alienrpg.config.skills[id] + " " + "-" + " " + this.actor.system.skills[id].value;
+						const name = game.alienrpg.config.skills[id] + " " + "-" + " " + this.actor.system.skills[id].mod;
 						const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? "";
 						const listName = `${actionTypeName}${game.alienrpg.config.skills[id]}`;
 						const encodedValue = [actionType, id].join(this.delimiter);

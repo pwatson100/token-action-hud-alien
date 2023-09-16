@@ -200,7 +200,9 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			if (!actor.system?.attributes) return;
 			rData = {
 				roll: actor.system.attributes[actionId].value,
+				mod: actor.system.attributes[actionId].mod,
 				label: actor.system.attributes[actionId].label,
+				attr: "attribute",
 			};
 			if (event.type === "click") {
 				await actor.rollAbility(actor, rData);
@@ -493,7 +495,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		}
 
 		async #handleCreatureAttackAction(actor, event) {
-			const rAttData = { atttype: actor.system.cTables };
+			const rAttData = { atttype: actor.system.rTables };
 			switch (event.type) {
 				case "contextmenu":
 					actor.creatureManAttackRoll(actor, rAttData);
