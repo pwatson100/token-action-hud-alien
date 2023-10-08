@@ -1,3 +1,6 @@
+Version 1.0.2
+Fixed issue where items in the footlocker were showing in the Inventory list
+
 Version 1.0.1
 Creature attacks not rolling on the correct table.
 Skills now show the roll total (attribute+skill+modifiers).

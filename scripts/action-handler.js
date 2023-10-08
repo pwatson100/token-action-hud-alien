@@ -146,7 +146,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 				if (type === "weapon" || type === "armor" || type === "item") {
 					const equipped = itemData.system.header.active;
 
-					if (equipped || this.displayUnequipped) {
+					if (equipped === true || this.displayUnequipped) {
 						const typeMap = inventoryMap.get(type) ?? new Map();
 						typeMap.set(itemId, itemData);
 						inventoryMap.set(type, typeMap);
