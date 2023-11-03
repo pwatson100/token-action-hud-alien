@@ -1,3 +1,8 @@
+Version 1.0.3
+BREAKING CHANGE: This will not work with versions of TAH Core below 1.5
+Now compatible with Token Action HUD Core 1.5
+Vehicle inventory now showing (weapons etc).
+
 Version 1.0.2
 Fixed issue where items in the footlocker were showing in the Inventory list
 
