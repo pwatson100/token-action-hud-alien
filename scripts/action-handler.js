@@ -1,10 +1,10 @@
 // System Module Imports
-import { ACTION_TYPE, ITEM_TYPE, CONDITION } from "./constants.js";
-import { Utils } from "./utils.js";
+import { ACTION_TYPE, ITEM_TYPE, CONDITION } from './constants.js';
+import { Utils } from './utils.js';
 
 export let ActionHandler = null;
 
-Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
+Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 	/**
 	 * Extends Token Action HUD Core's ActionHandler class and builds system-defined actions for the HUD
 	 */
@@ -34,8 +34,8 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			this.actorType = this.actor?.type;
 
 			// Settings
-			this.displayUnequipped = Utils.getSetting("displayUnequipped");
-			this.showtooltip = Utils.getSetting("showtooltip");
+			this.displayUnequipped = Utils.getSetting('displayUnequipped');
+			this.showtooltip = Utils.getSetting('showtooltip');
 
 			// Set items variable
 			if (this.actor) {
@@ -45,26 +45,26 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			}
 
 			switch (this.actorType) {
-				case "character":
+				case 'character':
 					{
 						await this.#buildCharacterActions();
 					}
 					break;
-				case "synthetic":
+				case 'synthetic':
 					{
 						await this.#buildSyntheticActions(this.actor);
 					}
 					break;
-				case "creature":
+				case 'creature':
 					{
-						this.inventorygroupIds = ["attributes", "attack"];
+						this.inventorygroupIds = ['attributes', 'attack'];
 						await this.#buildCreatureActions();
 					}
 					break;
-				case "vehicles":
+				case 'vehicles':
 					this.#buildVehicleActions();
 					break;
-				case "spacecraft":
+				case 'spacecraft':
 					this.#buildSpacecraftActions();
 					this.#buildMinorCrit();
 					this.#buildMajorCrit();
@@ -126,7 +126,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		}
 
 		async #buildVehicleActions() {
-			await Promise.all([this.#buildVehicleAttributes(), this.#buildInventory(), this.#buildHull()]);
+			await Promise.all([this.#buildVehicleAttributes(), this.#buildVehicleInventory(), this.#buildHull()]);
 		}
 		async #buildSpacecraftActions() {
 			await Promise.all([this.#buildSpacecraftAttributes(), this.#buildSpacecraftArmaments(), this.#buildSpacecraftDamage()]);
@@ -137,13 +137,13 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		async #buildInventory() {
 			if (this.items.size === 0) return;
 
-			const actionTypeId = "item";
+			const actionTypeId = 'item';
 			const inventoryMap = new Map();
 
 			for (const [itemId, itemData] of this.items) {
 				const type = itemData.type;
 
-				if (type === "weapon" || type === "armor" || type === "item") {
+				if (type === 'weapon' || type === 'armor' || type === 'item') {
 					const equipped = itemData.system.header.active;
 
 					if (equipped === true || this.displayUnequipped) {
@@ -161,22 +161,80 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 
 				if (!groupId) continue;
 
-				const groupData = { id: groupId, type: "system" };
+				const groupData = { id: groupId, type: 'system' };
 
 				// Get actions
 				const actions = [...typeMap].map(([itemId, itemData]) => {
-					let name = "";
+					let name = '';
 					const id = itemId;
 					const img = coreModule.api.Utils.getImage(itemData);
-					if (itemData.type === "armor") {
-						name = itemData.name + " " + "-" + " " + itemData.system.attributes.armorrating.value;
+					if (itemData.type === 'armor') {
+						name = itemData.name + ' ' + '-' + ' ' + itemData.system.attributes.armorrating.value;
 					} else {
 						name = itemData.name;
 					}
 					const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
-					const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
+					const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
 					const encodedValue = [actionTypeId, id].join(this.delimiter);
-					const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
+					const tooltip = coreModule.api.Utils.i18n('ALIENRPG.LEFTCLICKTOROLL');
+
+					return {
+						id,
+						name,
+						img,
+						listName,
+						encodedValue,
+						tooltip,
+					};
+				});
+
+				// TAH Core method to add actions to the action list
+				this.addActions(actions, groupData);
+			}
+		}
+		async #buildVehicleInventory() {
+			if (this.items.size === 0) return;
+
+			const actionTypeId = 'item';
+			const inventoryMap = new Map();
+
+			for (const [itemId, itemData] of this.items) {
+				const type = itemData.type;
+
+				// if (type === "weapon" || type === "armor" || type === "item") {
+				// const equipped = itemData.system.header.active;
+
+				// if (equipped === true || this.displayUnequipped) {
+				const typeMap = inventoryMap.get(type) ?? new Map();
+				typeMap.set(itemId, itemData);
+				inventoryMap.set(type, typeMap);
+				// 	}
+				// } else {
+				// 	continue;
+				// }
+			}
+
+			for (const [type, typeMap] of inventoryMap) {
+				const groupId = ITEM_TYPE[type]?.groupId;
+
+				if (!groupId) continue;
+
+				const groupData = { id: groupId, type: 'system' };
+
+				// Get actions
+				const actions = [...typeMap].map(([itemId, itemData]) => {
+					let name = '';
+					const id = itemId;
+					const img = coreModule.api.Utils.getImage(itemData);
+					if (itemData.type === 'armor') {
+						name = itemData.name + ' ' + '-' + ' ' + itemData.system.attributes.armorrating.value;
+					} else {
+						name = itemData.name;
+					}
+					const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
+					const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
+					const encodedValue = [actionTypeId, id].join(this.delimiter);
+					const tooltip = coreModule.api.Utils.i18n('ALIENRPG.LEFTCLICKTOROLL');
 
 					return {
 						id,
@@ -194,23 +252,23 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		}
 
 		async #buildSpacecraftArmaments() {
-			let type = "";
+			let type = '';
 			if (this.items.size === 0) return;
 
-			const actionTypeId = "armaments";
+			const actionTypeId = 'armaments';
 			const inventoryMap = new Map();
 
 			for (const [itemId, itemData] of this.items) {
 				const atype = itemData.system.header.type.value;
 				switch (atype) {
-					case "1":
-						type = "offensive";
+					case '1':
+						type = 'offensive';
 						break;
-					case "2":
-						type = "defensive";
+					case '2':
+						type = 'defensive';
 						break;
 					default:
-						type = "shipitem";
+						type = 'shipitem';
 
 						break;
 				}
@@ -225,16 +283,16 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 
 				if (!groupId) continue;
 
-				const groupData = { id: groupId, type: "system" };
+				const groupData = { id: groupId, type: 'system' };
 				// Get actions
 				const actions = [...typeMap].map(([itemId, itemData]) => {
 					const id = itemId;
 					const img = coreModule.api.Utils.getImage(itemData);
 					const name = itemData.name;
 					const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
-					const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
+					const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
 					const encodedValue = [actionTypeId, id].join(this.delimiter);
-					const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
+					const tooltip = coreModule.api.Utils.i18n('ALIENRPG.LEFTCLICKTOROLL');
 
 					return {
 						id,
@@ -254,11 +312,11 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		async #buildConditions() {
 			if (this.tokens?.length === 0) return;
 
-			const actionType = "conditions";
+			const actionType = 'conditions';
 
 			// Get conditions
 			const conditions = game.alienrpg.config.conditionEffects.filter(
-				(condition) => condition.id !== "" && condition.id !== "shipminor" && condition.id !== "shipmajor" && condition.id !== "criticalinj"
+				(condition) => condition.id !== '' && condition.id !== 'shipminor' && condition.id !== 'shipmajor' && condition.id !== 'criticalinj'
 			);
 
 			// Exit if no conditions exist
@@ -269,19 +327,19 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 				conditions.map(async (condition) => {
 					const id = condition.id;
 					const name = coreModule.api.Utils.i18n(condition.label) ?? condition.name;
-					const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? "";
+					const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? '';
 					const listName = `${actionTypeName}${name}`;
 					const encodedValue = [actionType, id].join(this.delimiter);
 					const active = this.actors.every((actor) => {
-						if (game.version.startsWith("11")) {
+						if (game.version.startsWith('11')) {
 							return actor.effects.some((effect) => effect.statuses.some((status) => status === id) && !effect?.disabled);
 						} else {
 							// V10
 							return actor.effects.some((effect) => effect.flags?.core?.statusId === id && !effect?.disabled);
 						}
 					})
-						? " active"
-						: "";
+						? ' active'
+						: '';
 					const cssClass = `toggle${active}`;
 					const img = coreModule.api.Utils.getImage(condition);
 					const tooltipData = this.#getConditionTooltipData(id, name);
@@ -299,7 +357,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			);
 
 			// Create group data
-			const groupData = { id: "conditions", type: "system" };
+			const groupData = { id: 'conditions', type: 'system' };
 
 			// Add actions to HUD
 			this.addActions(actions, groupData);
@@ -308,10 +366,10 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		async #buildSynthConditions() {
 			if (this.tokens?.length === 0) return;
 
-			const actionType = "conditions";
+			const actionType = 'conditions';
 
 			// Get conditions
-			const conditions = game.alienrpg.config.conditionEffects.filter((condition) => condition.id === "overwatch" || condition.id == "radiation");
+			const conditions = game.alienrpg.config.conditionEffects.filter((condition) => condition.id === 'overwatch' || condition.id == 'radiation');
 			// Exit if no conditions exist
 			if (conditions.length === 0) return;
 
@@ -320,19 +378,19 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 				conditions.map(async (condition) => {
 					const id = condition.id;
 					const name = coreModule.api.Utils.i18n(condition.label) ?? condition.name;
-					const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? "";
+					const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? '';
 					const listName = `${actionTypeName}${name}`;
 					const encodedValue = [actionType, id].join(this.delimiter);
 					const active = this.actors.every((actor) => {
-						if (game.version.startsWith("11")) {
+						if (game.version.startsWith('11')) {
 							return actor.effects.some((effect) => effect.statuses.some((status) => status === id) && !effect?.disabled);
 						} else {
 							// V10
 							return actor.effects.some((effect) => effect.flags?.core?.statusId === id && !effect?.disabled);
 						}
 					})
-						? " active"
-						: "";
+						? ' active'
+						: '';
 					const cssClass = `toggle${active}`;
 					const img = coreModule.api.Utils.getImage(condition);
 					const tooltipData = await this.#getConditionTooltipData(id, name);
@@ -350,14 +408,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			);
 
 			// Create group data
-			const groupData = { id: "conditions", type: "system" };
+			const groupData = { id: 'conditions', type: 'system' };
 
 			// Add actions to HUD
 			this.addActions(actions, groupData);
 		}
 
 		async #buildSkills() {
-			const actionType = "skill";
+			const actionType = 'skill';
 
 			// Get skills
 			const skills = {
@@ -373,12 +431,12 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 					try {
 						const id = skill[0];
 						// const abbreviatedName = id.charAt(0).toUpperCase() + id.slice(1);
-						const name = game.alienrpg.config.skills[id] + " " + "-" + " " + this.actor.system.skills[id].mod;
-						const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? "";
+						const name = game.alienrpg.config.skills[id] + ' ' + '-' + ' ' + this.actor.system.skills[id].mod;
+						const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? '';
 						const listName = `${actionTypeName}${game.alienrpg.config.skills[id]}`;
 						const encodedValue = [actionType, id].join(this.delimiter);
 						// const mod = skills[id].total
-						const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
+						const tooltip = coreModule.api.Utils.i18n('ALIENRPG.LEFTCLICKTOROLL');
 						return {
 							id,
 							name,
@@ -394,14 +452,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 				.filter((skill) => !!skill);
 
 			// Create group data
-			const groupData = { id: "skills", type: "system" };
+			const groupData = { id: 'skills', type: 'system' };
 
 			// Add actions to HUD
 			this.addActions(actions, groupData);
 		}
 
 		async #buildAttributes() {
-			const actionType = "attributes";
+			const actionType = 'attributes';
 
 			// Get skills
 			const attributes = {
@@ -416,12 +474,12 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 					try {
 						const id = attributes[0];
 						// const abbreviatedName = id.charAt(0).toUpperCase() + id.slice(1);
-						const name = game.alienrpg.config.attributes[id] + " " + "-" + " " + this.actor.system.attributes[id].value;
-						const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? "";
+						const name = game.alienrpg.config.attributes[id] + ' ' + '-' + ' ' + this.actor.system.attributes[id].value;
+						const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? '';
 						const listName = `${actionTypeName}${game.alienrpg.config.attributes[id]}`;
 						const encodedValue = [actionType, id].join(this.delimiter);
 						// const mod = attributes[id].total
-						const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
+						const tooltip = coreModule.api.Utils.i18n('ALIENRPG.LEFTCLICKTOROLL');
 						return {
 							id,
 							name,
@@ -437,14 +495,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 				.filter((attributes) => !!attributes);
 
 			// Create group data
-			const groupData = { id: "attributes", type: "system" };
+			const groupData = { id: 'attributes', type: 'system' };
 
 			// Add actions to HUD
 			this.addActions(actions, groupData);
 		}
 
 		async #buildVehicleAttributes() {
-			const actionType = "attributes";
+			const actionType = 'attributes';
 
 			// Get skills
 			let myattributes = {
@@ -466,12 +524,12 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 					try {
 						const id = myattributes[0];
 						// const abbreviatedName = id.charAt(0).toUpperCase() + id.slice(1);
-						const name = game.alienrpg.config.vehicleattributes[id] + " " + "-" + " " + this.actor.system.attributes[id].value;
-						const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? "";
+						const name = game.alienrpg.config.vehicleattributes[id] + ' ' + '-' + ' ' + this.actor.system.attributes[id].value;
+						const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? '';
 						const listName = `${actionTypeName}${game.alienrpg.config.vehicleattributes[id]}`;
 						const encodedValue = [actionType, id].join(this.delimiter);
 						// const mod = attributes[id].total
-						const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
+						const tooltip = coreModule.api.Utils.i18n('ALIENRPG.LEFTCLICKTOROLL');
 						return {
 							id,
 							name,
@@ -487,13 +545,13 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 				.filter((myattributes) => !!myattributes);
 
 			// Create group data
-			const groupData = { id: "attributes", type: "system" };
+			const groupData = { id: 'attributes', type: 'system' };
 
 			// Add actions to HUD
 			this.addActions(actions, groupData);
 		}
 		async #buildSpacecraftAttributes() {
-			const actionType = "attributes";
+			const actionType = 'attributes';
 
 			// Get skills
 			let myattributes = {
@@ -519,8 +577,8 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 					try {
 						const id = myattributes[0];
 						// const abbreviatedName = id.charAt(0).toUpperCase() + id.slice(1);
-						const name = game.alienrpg.config.spacecraftattributes[id] + " " + "-" + " " + this.actor.system.attributes[id].value;
-						const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? "";
+						const name = game.alienrpg.config.spacecraftattributes[id] + ' ' + '-' + ' ' + this.actor.system.attributes[id].value;
+						const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? '';
 						const listName = `${actionTypeName}${game.alienrpg.config.spacecraftattributes[id]}`;
 						const encodedValue = [actionType, id].join(this.delimiter);
 						// const mod = attributes[id].total
@@ -540,14 +598,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 				.filter((myattributes) => !!myattributes);
 
 			// Create group data
-			const groupData = { id: "attributes", type: "system" };
+			const groupData = { id: 'attributes', type: 'system' };
 
 			// Add actions to HUD
 			this.addActions(actions, groupData);
 		}
 
 		async #buildCreatureAttributes() {
-			const actionType = "attributes";
+			const actionType = 'attributes';
 			// Get skills
 			const attributes1 = {
 				...(!this.actor ? game.alienrpg.config.creatureattributes : this.actor.system.attributes),
@@ -573,12 +631,12 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 					try {
 						const id = myattributes[0];
 						// const abbreviatedName = id.charAt(0).toUpperCase() + id.slice(1);
-						const name = game.alienrpg.config.creatureattributes[id] + " " + "-" + " " + `${myattributes[1].value}`;
-						const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? "";
+						const name = game.alienrpg.config.creatureattributes[id] + ' ' + '-' + ' ' + `${myattributes[1].value}`;
+						const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? '';
 						const listName = `${actionTypeName}${game.alienrpg.config.creatureattributes[id]}`;
 						const encodedValue = [actionType, id].join(this.delimiter);
 						// const mod = attributes[id].total
-						const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
+						const tooltip = coreModule.api.Utils.i18n('ALIENRPG.LEFTCLICKTOROLL');
 						return {
 							id,
 							name,
@@ -594,14 +652,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 				.filter((myattributes) => !!myattributes);
 
 			// Create group data
-			const groupData = { id: "attributes", type: "system" };
+			const groupData = { id: 'attributes', type: 'system' };
 
 			// Add actions to HUD
 			this.addActions(actions, groupData);
 		}
 
 		async #buildCreatureDefence() {
-			const actionType = "defence";
+			const actionType = 'defence';
 			// Get skills
 			const defence1 = {
 				...(!this.actor ? game.alienrpg.config.creaturedefence : this.actor.system.attributes),
@@ -626,12 +684,12 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 					try {
 						const id = defence[0];
 						// const abbreviatedName = id.charAt(0).toUpperCase() + id.slice(1);
-						const name = game.alienrpg.config.creaturedefence[id] + " " + "-" + " " + `${defence[1].value}`;
-						const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? "";
+						const name = game.alienrpg.config.creaturedefence[id] + ' ' + '-' + ' ' + `${defence[1].value}`;
+						const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? '';
 						const listName = `${actionTypeName}${game.alienrpg.config.creaturedefence[id]}`;
 						const encodedValue = [actionType, id].join(this.delimiter);
 						// const mod = attributes[id].total
-						const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
+						const tooltip = coreModule.api.Utils.i18n('ALIENRPG.LEFTCLICKTOROLL');
 						return {
 							id,
 							name,
@@ -647,14 +705,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 				.filter((defence) => !!defence);
 
 			// Create group data
-			const groupData = { id: "defence", type: "system" };
+			const groupData = { id: 'defence', type: 'system' };
 
 			// Add actions to HUD
 			this.addActions(actions, groupData);
 		}
 
 		async #buildTalents() {
-			const actionTypeId = "talents";
+			const actionTypeId = 'talents';
 			if (this.items.size === 0) return;
 
 			const inventoryMap = new Map();
@@ -663,7 +721,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 				const type = itemData.type;
 				// debugger;
 
-				if (type === "talent") {
+				if (type === 'talent') {
 					const typeMap = inventoryMap.get(type) ?? new Map();
 					typeMap.set(itemId, itemData);
 					inventoryMap.set(type, typeMap);
@@ -677,14 +735,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 
 				if (!groupId) continue;
 
-				const groupData = { id: groupId, type: "system" };
+				const groupData = { id: groupId, type: 'system' };
 
 				// Get actions
 				const actions = [...typeMap].map(([itemId, itemData]) => {
 					const id = itemId;
 					const name = itemData.name;
 					const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
-					const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
+					const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
 					const encodedValue = [actionTypeId, id].join(this.delimiter);
 
 					return {
@@ -701,7 +759,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		}
 
 		async #buildAgenda() {
-			const actionTypeId = "agenda";
+			const actionTypeId = 'agenda';
 			if (this.items.size === 0) return;
 
 			const inventoryMap = new Map();
@@ -709,7 +767,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			for (const [itemId, itemData] of this.items) {
 				const type = itemData.type;
 
-				if (type === "agenda") {
+				if (type === 'agenda') {
 					const typeMap = inventoryMap.get(type) ?? new Map();
 					typeMap.set(itemId, itemData);
 					inventoryMap.set(type, typeMap);
@@ -723,14 +781,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 
 				if (!groupId) continue;
 
-				const groupData = { id: groupId, type: "system" };
+				const groupData = { id: groupId, type: 'system' };
 
 				// Get actions
 				const actions = [...typeMap].map(([itemId, itemData]) => {
 					const id = itemId;
 					const name = itemData.name;
 					const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
-					const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
+					const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
 					const encodedValue = [actionTypeId, id].join(this.delimiter);
 
 					return {
@@ -747,22 +805,22 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		}
 
 		async #buildHealth() {
-			const actionTypeId = "health";
+			const actionTypeId = 'health';
 			// if (this.items.health === 0) return;
 			// debugger;
 
-			const groupData = { id: "utility", type: "system" };
+			const groupData = { id: 'utility', type: 'system' };
 
 			const value = this.actor.system.header?.health.value;
 			const max = this.actor.system.header?.health?.max;
 
 			// Get actions
 			const id = actionTypeId;
-			const name = coreModule.api.Utils.i18n("ALIENRPG.Health") + " " + (max > 0 ? `${value ?? 0}/${max}` : "");
+			const name = coreModule.api.Utils.i18n('ALIENRPG.Health') + ' ' + (max > 0 ? `${value ?? 0}/${max}` : '');
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
-			const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
+			const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
 			const encodedValue = [actionTypeId, id].join(this.delimiter);
-			const tooltip = coreModule.api.Utils.i18n("ALIENRPG.ConButtons");
+			const tooltip = coreModule.api.Utils.i18n('ALIENRPG.ConButtons');
 			const actions = [
 				{
 					id,
@@ -777,22 +835,22 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		}
 
 		async #buildHull() {
-			const actionTypeId = "hull";
+			const actionTypeId = 'hull';
 			// if (this.items.health === 0) return;
 			// debugger;
 
-			const groupData = { id: "utility", type: "system" };
+			const groupData = { id: 'utility', type: 'system' };
 
 			const value = this.actor.system.attributes?.hull.value;
 			const max = this.actor.system.attributes?.hull?.max;
 
 			// Get actions
 			const id = actionTypeId;
-			const name = coreModule.api.Utils.i18n("ALIENRPG.Hull") + " " + (max > 0 ? `${value ?? 0}/${max}` : "");
+			const name = coreModule.api.Utils.i18n('ALIENRPG.Hull') + ' ' + (max > 0 ? `${value ?? 0}/${max}` : '');
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
-			const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
+			const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
 			const encodedValue = [actionTypeId, id].join(this.delimiter);
-			const tooltip = coreModule.api.Utils.i18n("ALIENRPG.ConButtons");
+			const tooltip = coreModule.api.Utils.i18n('ALIENRPG.ConButtons');
 			const actions = [
 				{
 					id,
@@ -807,22 +865,22 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		}
 
 		async #buildSpacecraftDamage() {
-			const actionTypeId = "damage";
+			const actionTypeId = 'damage';
 			// if (this.items.health === 0) return;
 			// debugger;
 
-			const groupData = { id: "utility", type: "system" };
+			const groupData = { id: 'utility', type: 'system' };
 
 			const value = this.actor.system.attributes?.damage.value;
 			const max = this.actor.system.attributes?.damage?.max;
 
 			// Get actions
 			const id = actionTypeId;
-			const name = coreModule.api.Utils.i18n("ALIENRPG.DAMAGE") + " " + (max > 0 ? `${value ?? 0}/${max}` : "");
+			const name = coreModule.api.Utils.i18n('ALIENRPG.DAMAGE') + ' ' + (max > 0 ? `${value ?? 0}/${max}` : '');
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
-			const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
+			const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
 			const encodedValue = [actionTypeId, id].join(this.delimiter);
-			const tooltip = coreModule.api.Utils.i18n("ALIENRPG.ConButtons");
+			const tooltip = coreModule.api.Utils.i18n('ALIENRPG.ConButtons');
 			const actions = [
 				{
 					id,
@@ -836,22 +894,22 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			this.addActions(actions, groupData);
 		}
 		async #buildStress() {
-			const actionTypeId = "stress";
+			const actionTypeId = 'stress';
 			// if (this.items.health === 0) return;
 			// debugger;
 
-			const groupData = { id: "utility", type: "system" };
+			const groupData = { id: 'utility', type: 'system' };
 
 			const value = this.actor.system.header?.stress.value;
 			const max = this.actor.system.header?.stress?.max;
 
 			// Get actions
 			const id = actionTypeId;
-			const name = coreModule.api.Utils.i18n("ALIENRPG.Stress") + " " + (max > 0 ? `${value ?? 0}/${max}` : "");
+			const name = coreModule.api.Utils.i18n('ALIENRPG.Stress') + ' ' + (max > 0 ? `${value ?? 0}/${max}` : '');
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
-			const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
+			const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
 			const encodedValue = [actionTypeId, id].join(this.delimiter);
-			const tooltip = coreModule.api.Utils.i18n("ALIENRPG.ConButtons");
+			const tooltip = coreModule.api.Utils.i18n('ALIENRPG.ConButtons');
 			const actions = [
 				{
 					id,
@@ -866,19 +924,19 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		}
 
 		async #buildCrit() {
-			const actionTypeId = "criticalinjury";
+			const actionTypeId = 'criticalinjury';
 			// if (this.items.health === 0) return;
 			// debugger;
 
-			const groupData = { id: "utility", type: "system" };
+			const groupData = { id: 'utility', type: 'system' };
 
 			// Get actions
 			const id = actionTypeId;
-			const name = coreModule.api.Utils.i18n("ALIENRPG.RollCrit");
+			const name = coreModule.api.Utils.i18n('ALIENRPG.RollCrit');
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
-			const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
+			const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
 			const encodedValue = [actionTypeId, id].join(this.delimiter);
-			const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
+			const tooltip = coreModule.api.Utils.i18n('ALIENRPG.LEFTCLICKTOROLL');
 			const actions = [
 				{
 					id,
@@ -892,19 +950,19 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			this.addActions(actions, groupData);
 		}
 		async #buildMinorCrit() {
-			const actionTypeId = "spacecraft-minor";
+			const actionTypeId = 'spacecraft-minor';
 			// if (this.items.health === 0) return;
 			// debugger;
 
-			const groupData = { id: "utility", type: "system" };
+			const groupData = { id: 'utility', type: 'system' };
 
 			// Get actions
 			const id = actionTypeId;
-			const name = coreModule.api.Utils.i18n("ALIENRPG.MINOR-COMPONENT-DAMAGE");
+			const name = coreModule.api.Utils.i18n('ALIENRPG.MINOR-COMPONENT-DAMAGE');
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
-			const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
+			const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
 			const encodedValue = [actionTypeId, id].join(this.delimiter);
-			const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
+			const tooltip = coreModule.api.Utils.i18n('ALIENRPG.LEFTCLICKTOROLL');
 			const actions = [
 				{
 					id,
@@ -918,19 +976,19 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			this.addActions(actions, groupData);
 		}
 		async #buildMajorCrit() {
-			const actionTypeId = "spacecraft-major";
+			const actionTypeId = 'spacecraft-major';
 			// if (this.items.health === 0) return;
 			// debugger;
 
-			const groupData = { id: "utility", type: "system" };
+			const groupData = { id: 'utility', type: 'system' };
 
 			// Get actions
 			const id = actionTypeId;
-			const name = coreModule.api.Utils.i18n("ALIENRPG.MAJOR-COMPONENT-DAMAGE");
+			const name = coreModule.api.Utils.i18n('ALIENRPG.MAJOR-COMPONENT-DAMAGE');
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
-			const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
+			const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
 			const encodedValue = [actionTypeId, id].join(this.delimiter);
-			const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
+			const tooltip = coreModule.api.Utils.i18n('ALIENRPG.LEFTCLICKTOROLL');
 			const actions = [
 				{
 					id,
@@ -945,15 +1003,15 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		}
 
 		async #buildCreatureAttack() {
-			const groupData = { id: "attackroll", type: "system" };
+			const groupData = { id: 'attackroll', type: 'system' };
 
-			const actionTypeId = "attackroll";
+			const actionTypeId = 'attackroll';
 			const id = actionTypeId;
-			const name = coreModule.api.Utils.i18n("ALIENRPG.AttackRoll");
+			const name = coreModule.api.Utils.i18n('ALIENRPG.AttackRoll');
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
-			const listName = `${actionTypeName ? `${actionTypeName}: ` : ""}${name}`;
+			const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
 			const encodedValue = [actionTypeId, id].join(this.delimiter);
-			const tooltip = coreModule.api.Utils.i18n("ALIENRPG.LEFTCLICKTOROLL");
+			const tooltip = coreModule.api.Utils.i18n('ALIENRPG.LEFTCLICKTOROLL');
 			const actions = [
 				{
 					id,
@@ -973,7 +1031,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		 * @returns {object}
 		 */
 		async #getActors() {
-			const allowedTypes = ["character", "synthetic"];
+			const allowedTypes = ['character', 'synthetic'];
 			const actors = canvas.tokens.controlled.filter((token) => token.actor).map((token) => token.actor);
 			if (actors.every((actor) => allowedTypes.includes(actor.type))) {
 				return actors;
@@ -988,7 +1046,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		 * @returns {object}
 		 */
 		async #getTokens() {
-			const allowedTypes = ["character", "synthetic"];
+			const allowedTypes = ['character', 'synthetic'];
 			const tokens = canvas.tokens.controlled;
 			const actors = tokens.filter((token) => token.actor).map((token) => token.actor);
 			if (actors.every((actor) => allowedTypes.includes(actor.type))) {
@@ -1005,7 +1063,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		 * @returns {object} The tooltip data
 		 */
 		#getConditionTooltipData(id, name) {
-			if (this.showtooltip === false) return "";
+			if (this.showtooltip === false) return '';
 			const description = CONDITION[id] ? CONDITION[id]?.description : null;
 			return {
 				name,
@@ -1018,7 +1076,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		 * @returns {string}           The tooltip
 		 */
 		#getTooltip(tooltipData) {
-			if (this.showtooltip === false) return "";
+			if (this.showtooltip === false) return '';
 			// if (typeof tooltipData === 'string') return tooltipData;
 
 			const name = coreModule.api.Utils.i18n(tooltipData.name);
@@ -1028,47 +1086,47 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			const nameHtml = `<h3>${name}</h3>`;
 
 			const description =
-				tooltipData?.descriptionLocalised ?? TextEditor.enrichHTML(coreModule.api.Utils.i18n(tooltipData?.description ?? ""), { async: false });
+				tooltipData?.descriptionLocalised ?? TextEditor.enrichHTML(coreModule.api.Utils.i18n(tooltipData?.description ?? ''), { async: false });
 
 			const rarityHtml = tooltipData?.rarity
 				? `<span class="tah-tag ${tooltipData.rarity}">${coreModule.api.Utils.i18n(RARITY[tooltipData.rarity])}</span>`
-				: "";
+				: '';
 
 			const propertiesHtml = tooltipData?.properties
 				? `<div class="tah-properties">${tooltipData.properties
 						.map((property) => `<span class="tah-property">${coreModule.api.Utils.i18n(property)}</span>`)
-						.join("")}</div>`
-				: "";
+						.join('')}</div>`
+				: '';
 
 			const traitsHtml = tooltipData?.traits
-				? tooltipData.traits.map((trait) => `<span class="tah-tag">${coreModule.api.Utils.i18n(trait.label ?? trait)}</span>`).join("")
-				: "";
+				? tooltipData.traits.map((trait) => `<span class="tah-tag">${coreModule.api.Utils.i18n(trait.label ?? trait)}</span>`).join('')
+				: '';
 
 			const traits2Html = tooltipData?.traits2
-				? tooltipData.traits2.map((trait) => `<span class="tah-tag tah-tag-secondary">${coreModule.api.Utils.i18n(trait.label ?? trait)}</span>`).join("")
-				: "";
+				? tooltipData.traits2.map((trait) => `<span class="tah-tag tah-tag-secondary">${coreModule.api.Utils.i18n(trait.label ?? trait)}</span>`).join('')
+				: '';
 
 			const traitsAltHtml = tooltipData?.traitsAlt
-				? tooltipData.traitsAlt.map((trait) => `<span class="tah-tag tah-tag-alt">${coreModule.api.Utils.i18n(trait.label)}</span>`).join("")
-				: "";
+				? tooltipData.traitsAlt.map((trait) => `<span class="tah-tag tah-tag-alt">${coreModule.api.Utils.i18n(trait.label)}</span>`).join('')
+				: '';
 
 			const modifiersHtml = tooltipData?.modifiers
 				? `<div class="tah-tags">${tooltipData.modifiers
 						.filter((modifier) => modifier.enabled)
 						.map((modifier) => {
 							const label = coreModule.api.Utils.i18n(modifier.label);
-							const sign = modifier.modifier >= 0 ? "+" : "";
-							const mod = `${sign}${modifier.modifier ?? ""}`;
+							const sign = modifier.modifier >= 0 ? '+' : '';
+							const mod = `${sign}${modifier.modifier ?? ''}`;
 							return `<span class="tah-tag tah-tag-transparent">${label} ${mod}</span>`;
 						})
-						.join("")}</div>`
-				: "";
+						.join('')}</div>`
+				: '';
 
-			const tagsJoined = [rarityHtml, traitsHtml, traits2Html, traitsAltHtml].join("");
+			const tagsJoined = [rarityHtml, traitsHtml, traits2Html, traitsAltHtml].join('');
 
-			const tagsHtml = tagsJoined ? `<div class="tah-tags">${tagsJoined}</div>` : "";
+			const tagsHtml = tagsJoined ? `<div class="tah-tags">${tagsJoined}</div>` : '';
 
-			const headerTags = tagsHtml || modifiersHtml ? `<div class="tah-tags-wrapper">${tagsHtml}${modifiersHtml}</div>` : "";
+			const headerTags = tagsHtml || modifiersHtml ? `<div class="tah-tags-wrapper">${tagsHtml}${modifiersHtml}</div>` : '';
 
 			if (!description && !tagsHtml && !modifiersHtml) return name;
 
