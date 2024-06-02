@@ -1,6 +1,6 @@
 export let RollHandler = null;
 
-Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
+Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 	/**
 	 * Extends Token Action HUD Core's RollHandler class and handles action events triggered when an action is clicked
 	 */
@@ -13,7 +13,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		 * @param {string} encodedValue The encoded value
 		 */
 		async handleActionClick(event, encodedValue) {
-			const payload = encodedValue.split("|");
+			const payload = encodedValue.split('|');
 
 			if (payload.length !== 2) {
 				super.throwInvalidValueErr();
@@ -28,7 +28,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 				return this.rRenderItem(this.actor, actionId);
 			}
 
-			const knownCharacters = ["character", "synthetic", "creature"];
+			const knownCharacters = ['character', 'synthetic', 'creature'];
 
 			// If single actor is selected
 			if (this.actor) {
@@ -56,21 +56,21 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		 */
 		async #handleAction(event, actor, token, actionTypeId, actionId) {
 			switch (actor.type) {
-				case "character":
-				case "synthetic":
+				case 'character':
+				case 'synthetic':
 					{
 						switch (actionTypeId) {
-							case "attributes":
+							case 'attributes':
 								await this.#handleAttributeAction(event, actor, actionId);
 								break;
-							case "item":
+							case 'item':
 								{
 									const actorItem = actor.items.get(actionId);
 									switch (actorItem.type) {
-										case "weapon":
+										case 'weapon':
 											await this.#handleWeaponAction(event, actor, actionId, actorItem);
 											break;
-										case "armor":
+										case 'armor':
 											await this.#handleUArmorAction(event, actor, actionId, actorItem);
 											break;
 										default:
@@ -80,19 +80,19 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 								}
 								break;
 
-							case "skill":
+							case 'skill':
 								await this.#handleSkillAction(event, actor, actionId);
 								break;
-							case "conditions":
+							case 'conditions':
 								await this.#handleConditionAction(event, actor, actionId);
 								break;
-							case "health":
-								await this.#adjustAttribute(actor, "health", "value");
+							case 'health':
+								await this.#adjustAttribute(actor, 'health', 'value');
 								break;
-							case "stress":
-								await this.#adjustAttribute(actor, "stress", "value");
+							case 'stress':
+								await this.#adjustAttribute(actor, 'stress', 'value');
 								break;
-							case "criticalinjury":
+							case 'criticalinjury':
 								await this.#handleCritAction(actor, event);
 								break;
 
@@ -102,22 +102,22 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 						}
 					}
 					break;
-				case "creature":
+				case 'creature':
 					{
 						switch (actionTypeId) {
-							case "attributes":
+							case 'attributes':
 								await this.#handleCreatureAttributeAction(event, actor, actionId);
 								break;
-							case "defence":
+							case 'defence':
 								await this.#handleCreatureAttributeAction(event, actor, actionId);
 								break;
-							case "attackroll":
+							case 'attackroll':
 								await this.#handleCreatureAttackAction(actor, event);
 								break;
-							case "health":
-								await this.#adjustAttribute(actor, "health", "value");
+							case 'health':
+								await this.#adjustAttribute(actor, 'health', 'value');
 								break;
-							case "criticalinjury":
+							case 'criticalinjury':
 								await this.#handleCritAction(actor, event);
 								break;
 
@@ -126,13 +126,13 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 						}
 					}
 					break;
-				case "vehicles": {
+				case 'vehicles': {
 					switch (actionTypeId) {
-						case "item":
+						case 'item':
 							{
 								const actorItem = actor.items.get(actionId);
 								switch (actorItem.type) {
-									case "weapon":
+									case 'weapon':
 										await this.#handleWeaponAction(event, actor, actionId, actorItem);
 										break;
 									default:
@@ -141,25 +141,25 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 								}
 							}
 							break;
-						case "hull":
-							await this.#adjustHull(actor, "hull", "value");
+						case 'hull':
+							await this.#adjustHull(actor, 'hull', 'value');
 							break;
 
 						default:
-							if (actionId === "armorrating") {
+							if (actionId === 'armorrating') {
 								await this.#handleVehicleArmorAction(event, actor, actionId);
 								break;
 							}
 					}
 				}
-				case "spacecraft": {
+				case 'spacecraft': {
 					switch (actionTypeId) {
-						case "armaments":
+						case 'armaments':
 							{
 								const actorItem = actor.items.get(actionId);
 								switch (actorItem.system.header.type.value) {
-									case "1":
-									case "2":
+									case '1':
+									case '2':
 										await this.#handleWeaponAction(event, actor, actionId, actorItem);
 										break;
 									default:
@@ -168,19 +168,19 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 								}
 							}
 							break;
-						case "damage":
-							await this.#adjustHull(actor, "damage", "value");
+						case 'damage':
+							await this.#adjustHull(actor, 'damage', 'value');
 							break;
-						case "attributes":
-							if (actionId === "armor") {
+						case 'attributes':
+							if (actionId === 'armor') {
 								await this.#handleVehicleArmorAction(event, actor, actionId);
 							}
 							break;
-						case "spacecraft-minor":
-							await this.#handleSpacecraftCritAction(actor, event, "minor");
+						case 'spacecraft-minor':
+							await this.#handleSpacecraftCritAction(actor, event, 'minor');
 							break;
-						case "spacecraft-major":
-							await this.#handleSpacecraftCritAction(actor, event, "major");
+						case 'spacecraft-major':
+							await this.#handleSpacecraftCritAction(actor, event, 'major');
 							break;
 					}
 				}
@@ -202,9 +202,9 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 				roll: actor.system.attributes[actionId].value,
 				mod: actor.system.attributes[actionId].mod,
 				label: actor.system.attributes[actionId].label,
-				attr: "attribute",
+				attr: 'attribute',
 			};
-			if (event.type === "click") {
+			if (event.type === 'click') {
 				await actor.rollAbility(actor, rData);
 			} else {
 				await actor.rollAbilityMod(actor, rData);
@@ -221,36 +221,36 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			let rData = [];
 			if (!actor) return;
 			switch (actionId) {
-				case "speed":
-				case "armorrating":
-				case "armorvfire":
+				case 'speed':
+				case 'armorrating':
+				case 'armorvfire':
 					{
 						rData = {
 							roll: actor.system.attributes[actionId].value,
 							label: coreModule.api.Utils.i18n(game.alienrpg.config.creaturedefence[actionId]),
 						};
 					}
-					if (event.type === "click") {
+					if (event.type === 'click') {
 						await actor.rollAbility(actor, rData);
 					} else {
 						await actor.rollAbilityMod(actor, rData);
 					}
 					break;
-				case "mobility":
-				case "observation":
+				case 'mobility':
+				case 'observation':
 					{
 						rData = {
 							roll: actor.system.general[actionId].value,
 							label: actor.system.general[actionId].label,
 						};
 					}
-					if (event.type === "click") {
+					if (event.type === 'click') {
 						await actor.rollAbility(actor, rData);
 					} else {
 						await actor.rollAbilityMod(actor, rData);
 					}
 					break;
-				case "acidSplash":
+				case 'acidSplash':
 					{
 						rData = {
 							roll: actor.system.general[actionId].value,
@@ -277,7 +277,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 				roll: actor.system.skills[actionId].mod,
 				label: actor.system.skills[actionId].label,
 			};
-			if (event.type === "click") {
+			if (event.type === 'click') {
 				await actor.rollAbility(actor, rData);
 			} else {
 				await actor.rollAbilityMod(actor, rData);
@@ -296,9 +296,9 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			// if (!actor.system?.skills) return
 			rData = {
 				roll: actor.system.general.armor.value,
-				spbutt: "armor",
+				spbutt: 'armor',
 			};
-			if (event.type === "click") {
+			if (event.type === 'click') {
 				await actor.rollAbility(actor, rData);
 			} else {
 				await actor.rollAbilityMod(actor, rData);
@@ -316,23 +316,23 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 			if (!actor) return;
 			// if (!actor.system?.skills) return
 			switch (actor.type) {
-				case "spacecraft":
+				case 'spacecraft':
 					rData = {
 						roll: actor.system.attributes.armor.value,
-						spbutt: "armor",
+						spbutt: 'armor',
 					};
 					break;
-				case "vehicles":
+				case 'vehicles':
 					rData = {
 						roll: actor.system.attributes.armorrating.value,
-						spbutt: "armor",
+						spbutt: 'armor',
 					};
 					break;
 				default:
 					break;
 			}
 
-			if (event.type === "click") {
+			if (event.type === 'click') {
 				await actor.rollAbility(actor, rData);
 			} else {
 				await actor.rollAbilityMod(actor, rData);
@@ -348,7 +348,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		 */
 		async #handleWeaponAction(event, actor, actionId, actorItem) {
 			// const item = actor.items.get(actionId);
-			if (event.type === "click") {
+			if (event.type === 'click') {
 				await actor.nowRollItem(actorItem);
 			} else {
 				await actor.rollItemMod(actorItem);
@@ -365,32 +365,32 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		async #handleConditionAction(event, actor, actionId) {
 			// debugger;
 			switch (actionId) {
-				case "starving":
-					await this.toggleConditionState(event, actor, "starving", "value");
+				case 'starving':
+					await this.toggleConditionState(event, actor, 'starving', 'value');
 					break;
-				case "dehydrated":
-					await this.toggleConditionState(event, actor, "dehydrated", "value");
+				case 'dehydrated':
+					await this.toggleConditionState(event, actor, 'dehydrated', 'value');
 					break;
-				case "exhausted":
-					await this.toggleConditionState(event, actor, "exhausted", "value");
+				case 'exhausted':
+					await this.toggleConditionState(event, actor, 'exhausted', 'value');
 					break;
-				case "freezing":
-					await this.toggleConditionState(event, actor, "freezing", "value");
+				case 'freezing':
+					await this.toggleConditionState(event, actor, 'freezing', 'value');
 					break;
-				case "panicked":
-					await this.toggleConditionState(event, actor, "panic", "value");
+				case 'panicked':
+					await this.toggleConditionState(event, actor, 'panic', 'value');
 					break;
-				case "overwatch":
+				case 'overwatch':
 					{
-						if (await actor.hasCondition("overwatch")) {
-							await this.actor.removeCondition("overwatch");
+						if (await actor.hasCondition('overwatch')) {
+							await this.actor.removeCondition('overwatch');
 						} else {
-							await actor.addCondition("overwatch");
+							await actor.addCondition('overwatch');
 						}
 					}
 					break;
-				case "radiation":
-					await this.toggleConditionState(event, actor, "radiation", "value");
+				case 'radiation':
+					await this.toggleConditionState(event, actor, 'radiation', 'value');
 					break;
 			}
 		}
@@ -398,14 +398,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		async toggleConditionState(event, actor, property, valueName) {
 			let rData = [];
 			let value = actor.system.general[property][valueName];
-			let max = "1";
+			let max = '1';
 			let update = {};
 			// debugger;
 			switch (event.type) {
-				case "contextmenu":
+				case 'contextmenu':
 					{
 						switch (property) {
-							case "panic":
+							case 'panic':
 								{
 									if (value <= 0) return;
 									await actor.checkAndEndPanic(actor);
@@ -415,24 +415,24 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 									await actor.update(update);
 								}
 								break;
-							case "radiation":
+							case 'radiation':
 								if (value <= 0) return;
 								{
 									rData = {
 										roll: actor.system.general.radiation.value,
-										label: "radiation",
+										label: 'radiation',
 									};
 									if (actor.system.general.radiation.value <= 1) {
-										await actor.removeCondition("radiation");
+										await actor.removeCondition('radiation');
 										await actor.update({
-											"system.general.radiation.value": (actor.system.general.radiation.value = 0),
+											'system.general.radiation.value': (actor.system.general.radiation.value = 0),
 										});
 									} else {
 										await actor.update({
-											"system.general.radiation.value": actor.system.general.radiation.value - 1,
+											'system.general.radiation.value': actor.system.general.radiation.value - 1,
 										});
 									}
-									await actor.createChatMessage(game.i18n.localize("ALIENRPG.RadiationReduced"), actor.id);
+									await actor.createChatMessage(game.i18n.localize('ALIENRPG.RadiationReduced'), actor.id);
 								}
 								break;
 
@@ -450,30 +450,30 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 						}
 					}
 					break;
-				case "click":
+				case 'click':
 					switch (property) {
-						case "panic":
+						case 'panic':
 							{
 								rData = {
-									panicroll: "true",
+									panicroll: 'true',
 								};
 								await actor.rollAbility(actor, rData);
 							}
 							break;
-						case "radiation":
+						case 'radiation':
 							{
 								rData = {
 									roll: `${actor.system.general.radiation.value} `,
-									label: "Radiation",
+									label: 'Radiation',
 								};
 								if (actor.system.general.radiation.value === 10) {
 									break;
 								} else {
 									await actor.rollAbility(actor, rData);
 									await actor.update({
-										"system.general.radiation.value": actor.system.general.radiation.value + 1,
+										'system.general.radiation.value': actor.system.general.radiation.value + 1,
 									});
-									await actor.addCondition("radiation");
+									await actor.addCondition('radiation');
 								}
 							}
 							break;
@@ -497,10 +497,10 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		async #handleCreatureAttackAction(actor, event) {
 			const rAttData = { atttype: actor.system.rTables };
 			switch (event.type) {
-				case "contextmenu":
+				case 'contextmenu':
 					actor.creatureManAttackRoll(actor, rAttData);
 					break;
-				case "click":
+				case 'click':
 					actor.creatureAttackRoll(actor, rAttData);
 				default:
 					break;
@@ -512,33 +512,33 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 				atttype: actor.system.cTables,
 			};
 			switch (event.type) {
-				case "contextmenu":
+				case 'contextmenu':
 					actor.rollCritMan(actor, actor.type, rData);
 					break;
-				case "click":
+				case 'click':
 					actor.rollCrit(actor, actor.type, rData);
 				default:
 					break;
 			}
 		}
 		async #handleSpacecraftCritAction(actor, event, eType) {
-			let rData = "";
+			let rData = '';
 			switch (eType) {
-				case "minor":
-					rData = { crbut: "minor" };
+				case 'minor':
+					rData = { crbut: 'minor' };
 					break;
-				case "major":
-					rData = { crbut: "major" };
+				case 'major':
+					rData = { crbut: 'major' };
 					break;
 				default:
 					break;
 			}
 
 			switch (event.type) {
-				case "contextmenu":
+				case 'contextmenu':
 					actor.rollCritMan(actor, actor.type, rData);
 					break;
-				case "click":
+				case 'click':
 					actor.rollCrit(actor, actor.type, rData);
 				default:
 					break;
@@ -557,7 +557,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 				value++;
 			}
 
-			let update = { data: { header: { [property]: { [valueName]: value } } } };
+			let update = { system: { header: { [property]: { [valueName]: value } } } };
 
 			await actor.update(update);
 		}
@@ -600,7 +600,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 		 */
 		async #handleUtilityAction(token, actionId) {
 			switch (actionId) {
-				case "endTurn":
+				case 'endTurn':
 					if (game.combat?.current?.tokenId === token.id) {
 						await game.combat?.nextTurn();
 					}
