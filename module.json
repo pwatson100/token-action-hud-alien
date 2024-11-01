@@ -44,9 +44,9 @@
 				"type": "module",
 				"compatibility": [
 					{
-						"minimum": "1.5.1",
-						"maximum": "1.5",
-						"verified": "1.5"
+						"minimum": "2.0.2",
+						"maximum": "2",
+						"verified": "2"
 					}
 				]
 			}
