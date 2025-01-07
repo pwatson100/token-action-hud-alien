@@ -92,6 +92,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 				this.#buildHealth(),
 				this.#buildStress(),
 				this.#buildCrit(),
+				this.#buildStatusEffects(),
 			]);
 		}
 		async #buildSyntheticActions(actor) {
@@ -1245,6 +1246,65 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 			if (!description && !tagsHtml && !modifiersHtml) return name;
 
 			return `<div>${nameHtml}${headerTags}${description}${propertiesHtml}</div>`;
+		}
+
+		async #buildStatusEffects() {
+			if (this.tokens?.length === 0) return;
+			let myActor = this.actor;
+			// let id = '';
+			// let rightClick = false;
+			const actionType = 'fastslow';
+
+			// Get conditions
+			const fastSlow = game.alienrpg.config.StatusEffects.slowAndFastActions;
+
+			// Exit if no fastSlow exist
+			if (fastSlow.length === 0) return;
+			let newActions = [];
+			// Get actions
+			const actions = await Promise.all(
+				fastSlow.map(async (condition) => {
+					let id = condition.id;
+					const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? '';
+					const active = this.actors.every((actor) => {
+						return actor.effects.some((effect) => effect.statuses.some((status) => status === id) && !effect?.disabled);
+					})
+						? ' active'
+						: '';
+					const rightClick = this.isRightClick;
+					newActions.push({
+						id: id,
+						name: coreModule.api.Utils.i18n(condition.label) ?? condition.name,
+						listName: `${actionTypeName}${name}`,
+						img: coreModule.api.Utils.getImage(condition),
+						cssClass: `toggle${active}`,
+
+						onClick: async () => {
+							switch (id) {
+								case 'slowAction':
+									if (await myActor.hasCondition('slowAction')) {
+										await myActor.removeFastSlow('slowAction');
+									} else {
+										await myActor.addFastSlow('slowAction');
+									}
+									break;
+								case 'fastAction':
+									if (await myActor.hasCondition('fastAction')) {
+										await myActor.removeFastSlow('fastAction');
+									} else {
+										await myActor.addFastSlow('fastAction');
+									}
+									break;
+							}
+						},
+					});
+					return newActions;
+				})
+			);
+			// Create group data
+			const groupData = { id: 'utility', type: 'system' };
+			// Add actions to HUD
+			this.addActions(newActions, groupData);
 		}
 	};
 });

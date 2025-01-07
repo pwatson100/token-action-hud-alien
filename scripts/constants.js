@@ -29,6 +29,7 @@ export const ACTION_TYPE = {
 	defence: 'ALIENRPG.Defensive',
 	attackroll: 'ALIENRPG.AttackRoll',
 	conditions: 'ALIENRPG.Conditions',
+	fastslow: 'ALIENRPG.fastslow',
 	utility: 'tokenActionHud.utility',
 };
 
@@ -49,6 +50,7 @@ export const GROUP = {
 	defence: { id: 'defence', name: 'ALIENRPG.Defensive', type: 'system' },
 	agenda: { id: 'agenda', name: 'ITEM.TypeAgenda', type: 'system' },
 	criticalinjury: { id: 'criticalinjury', name: 'ALIENRPG.RollCrit', type: 'system' },
+	fastslow: { id: 'fastslow', name: 'ALIENRPG.FastSlow', type: 'system' },
 	armaments: { id: 'armaments', name: 'ALIENRPG.ARMAMENTS', type: 'system' },
 	offensive: { id: 'offensive', name: 'ALIENRPG.Offensive', type: 'system' },
 	defensive: { id: 'defensive', name: 'ALIENRPG.Defensive', type: 'system' },
@@ -64,6 +66,7 @@ export const ITEM_TYPE = {
 	talent: { groupId: 'talents' },
 	agenda: { groupId: 'agenda' },
 	conditions: { groupId: 'conditions' },
+	fastslow: { groupId: 'fastslow' },
 	health: { groupId: 'health' },
 	stress: { groupId: 'stress' },
 	defence: { groupId: 'defence' },
