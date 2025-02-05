@@ -92,6 +92,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 				this.#buildHealth(),
 				this.#buildStress(),
 				this.#buildCrit(),
+				this.#buildStatusEffects(),
 			]);
 		}
 		async #buildSyntheticActions(actor) {
@@ -201,17 +202,9 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 			for (const [itemId, itemData] of this.items) {
 				const type = itemData.type;
 
-				// if (type === "weapon" || type === "armor" || type === "item") {
-				// const equipped = itemData.system.header.active;
-
-				// if (equipped === true || this.displayUnequipped) {
 				const typeMap = inventoryMap.get(type) ?? new Map();
 				typeMap.set(itemId, itemData);
 				inventoryMap.set(type, typeMap);
-				// 	}
-				// } else {
-				// 	continue;
-				// }
 			}
 
 			for (const [type, typeMap] of inventoryMap) {
@@ -311,7 +304,9 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 
 		async #buildConditions() {
 			if (this.tokens?.length === 0) return;
-
+			let myActor = this.actor;
+			// let id = '';
+			// let rightClick = false;
 			const actionType = 'conditions';
 
 			// Get conditions
@@ -321,46 +316,153 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 
 			// Exit if no conditions exist
 			if (conditions.length === 0) return;
-
+			let newActions = [];
 			// Get actions
 			const actions = await Promise.all(
 				conditions.map(async (condition) => {
-					const id = condition.id;
-					const name = coreModule.api.Utils.i18n(condition.label) ?? condition.name;
+					let id = condition.id;
 					const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? '';
-					const listName = `${actionTypeName}${name}`;
-					const encodedValue = [actionType, id].join(this.delimiter);
+					const tooltipData = await this.#getConditionTooltipData(id, name);
 					const active = this.actors.every((actor) => {
-						if (game.version.startsWith('11')) {
-							return actor.effects.some((effect) => effect.statuses.some((status) => status === id) && !effect?.disabled);
-						} else {
-							// V10
-							return actor.effects.some((effect) => effect.flags?.core?.statusId === id && !effect?.disabled);
-						}
+						return actor.effects.some((effect) => effect.statuses.some((status) => status === id) && !effect?.disabled);
 					})
 						? ' active'
 						: '';
-					const cssClass = `toggle${active}`;
-					const img = coreModule.api.Utils.getImage(condition);
-					const tooltipData = await this.#getConditionTooltipData(id, name);
-					const tooltip = await this.#getTooltip(tooltipData);
-					return {
-						id,
-						name,
-						encodedValue,
-						img,
-						cssClass,
-						listName,
-						tooltip,
-					};
+					const rightClick = this.isRightClick;
+					newActions.push({
+						id: id,
+						name: coreModule.api.Utils.i18n(condition.label) ?? condition.name,
+						listName: `${actionTypeName}${name}`,
+						tooltip: await this.#getTooltip(await this.#getConditionTooltipData(id, condition.name)),
+						img: coreModule.api.Utils.getImage(condition),
+						cssClass: `toggle${active}`,
+
+						onClick: async () => {
+							switch (id) {
+								case 'overwatch':
+									if (await myActor.hasCondition('overwatch')) {
+										await myActor.removeCondition('overwatch');
+									} else {
+										await myActor.addCondition('overwatch');
+									}
+									break;
+								case 'panicked':
+									await this.toggleConditionState(this.isRightClick, myActor, 'panic', 'panic');
+									break;
+
+								default:
+									await this.toggleConditionState(this.isRightClick, myActor, id, id);
+
+									break;
+							}
+						},
+					});
+					return newActions;
 				})
 			);
-
 			// Create group data
 			const groupData = { id: 'conditions', type: 'system' };
 
 			// Add actions to HUD
-			this.addActions(actions, groupData);
+			this.addActions(newActions, groupData);
+		}
+		async toggleConditionState(rightClick, myActor, property, valueName) {
+			let rData = [];
+			let value = myActor.system.general[property][valueName];
+			let max = '1';
+			let update = {};
+			// debugger;
+			switch (rightClick) {
+				case true:
+					{
+						switch (property) {
+							case 'panic':
+								{
+									if (value <= 0) return;
+									await myActor.checkAndEndPanic(myActor);
+									update = {
+										data: { general: { [property]: { [valueName]: 0 } } },
+									};
+									await myActor.update(update);
+								}
+								break;
+							case 'radiation':
+								if (value <= 0) return;
+								{
+									rData = {
+										roll: myActor.system.general.radiation.value,
+										label: 'radiation',
+									};
+									if (myActor.system.general.radiation.value <= 1) {
+										await myActor.removeCondition('radiation');
+										await myActor.update({
+											'system.general.radiation.value': (myActor.system.general.radiation.value = 0),
+										});
+									} else {
+										await myActor.update({
+											'system.general.radiation.value': myActor.system.general.radiation.value - 1,
+										});
+									}
+									await myActor.createChatMessage(game.i18n.localize('ALIENRPG.RadiationReduced'), myActor.id);
+								}
+								break;
+
+							default:
+								{
+									if (value <= 0) return;
+									value--;
+									await myActor.removeCondition(property);
+									update = {
+										data: { general: { [property]: { [valueName]: value } } },
+									};
+									await myActor.update(update);
+								}
+								break;
+						}
+					}
+					break;
+				case false:
+					switch (property) {
+						case 'panic':
+							{
+								rData = {
+									panicroll: 'true',
+								};
+								await myActor.rollAbility(myActor, rData);
+							}
+							break;
+						case 'radiation':
+							{
+								rData = {
+									roll: `${myActor.system.general.radiation.value} `,
+									label: 'Radiation',
+								};
+								if (myActor.system.general.radiation.value === 10) {
+									break;
+								} else {
+									await myActor.rollAbility(myActor, rData);
+									await myActor.update({
+										'system.general.radiation.value': myActor.system.general.radiation.value + 1,
+									});
+									await myActor.addCondition('radiation');
+								}
+							}
+							break;
+						default:
+							{
+								if (value >= max) return;
+								value++;
+								await myActor.addCondition(property);
+								update = {
+									data: { general: { [property]: { [valueName]: value } } },
+								};
+								await myActor.update(update);
+							}
+							break;
+					}
+				default:
+					break;
+			}
 		}
 
 		async #buildSynthConditions() {
@@ -806,30 +908,36 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 
 		async #buildHealth() {
 			const actionTypeId = 'health';
-			// if (this.items.health === 0) return;
-			// debugger;
-
+			let actions = [];
+			let myActor = this.actor;
+			let rightClick = this.isRightClick;
 			const groupData = { id: 'utility', type: 'system' };
-
-			const value = this.actor.system.header?.health.value;
+			let value = this.actor.system.header?.health.value;
 			const max = this.actor.system.header?.health?.max;
 
 			// Get actions
-			const id = actionTypeId;
-			const name = coreModule.api.Utils.i18n('ALIENRPG.Health') + ' ' + (max > 0 ? `${value ?? 0}/${max}` : '');
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
-			const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
-			const encodedValue = [actionTypeId, id].join(this.delimiter);
-			const tooltip = coreModule.api.Utils.i18n('ALIENRPG.ConButtons');
-			const actions = [
-				{
-					id,
-					name,
-					listName,
-					encodedValue,
-					tooltip,
+
+			actions.push({
+				id: 'health',
+				name: coreModule.api.Utils.i18n('ALIENRPG.Health') + ' ' + (max > 0 ? `${value ?? 0}/${max}` : ''),
+				listName: `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`,
+				tooltip: coreModule.api.Utils.i18n('ALIENRPG.ConButtons'),
+
+				onClick: async () => {
+					if (rightClick) {
+						if (value <= 0) return;
+						value--;
+					} else {
+						if (value >= max) return;
+						value++;
+					}
+
+					let update = { system: { header: { [actionTypeId]: { value: value } } } };
+
+					await myActor.update(update);
 				},
-			];
+			});
 			// TAH Core method to add actions to the action list
 			this.addActions(actions, groupData);
 		}
@@ -894,31 +1002,38 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 			this.addActions(actions, groupData);
 		}
 		async #buildStress() {
+			let actions = [];
 			const actionTypeId = 'stress';
-			// if (this.items.health === 0) return;
-			// debugger;
-
+			let myActor = this.actor;
+			let rightClick = this.isRightClick;
 			const groupData = { id: 'utility', type: 'system' };
 
-			const value = this.actor.system.header?.stress.value;
-			const max = this.actor.system.header?.stress?.max;
+			let value = myActor.system.header?.stress.value;
+			let max = myActor.system.header?.stress?.max;
 
 			// Get actions
-			const id = actionTypeId;
-			const name = coreModule.api.Utils.i18n('ALIENRPG.Stress') + ' ' + (max > 0 ? `${value ?? 0}/${max}` : '');
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
-			const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
-			const encodedValue = [actionTypeId, id].join(this.delimiter);
-			const tooltip = coreModule.api.Utils.i18n('ALIENRPG.ConButtons');
-			const actions = [
-				{
-					id,
-					name,
-					listName,
-					encodedValue,
-					tooltip,
+
+			actions.push({
+				id: 'actionTypeId',
+				name: coreModule.api.Utils.i18n('ALIENRPG.Stress') + ' ' + (max > 0 ? `${value ?? 0}/${max}` : ''),
+				listName: `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`,
+				tooltip: coreModule.api.Utils.i18n('ALIENRPG.ConButtons'),
+
+				onClick: async () => {
+					if (rightClick) {
+						if (value <= 0) return;
+						value--;
+					} else {
+						if (value >= max) return;
+						value++;
+					}
+
+					let update = { system: { header: { [actionTypeId]: { value: value } } } };
+
+					await myActor.update(update);
 				},
-			];
+			});
 			// TAH Core method to add actions to the action list
 			this.addActions(actions, groupData);
 		}
@@ -1131,6 +1246,65 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 			if (!description && !tagsHtml && !modifiersHtml) return name;
 
 			return `<div>${nameHtml}${headerTags}${description}${propertiesHtml}</div>`;
+		}
+
+		async #buildStatusEffects() {
+			if (this.tokens?.length === 0) return;
+			let myActor = this.actor;
+			// let id = '';
+			// let rightClick = false;
+			const actionType = 'fastslow';
+
+			// Get conditions
+			const fastSlow = game.alienrpg.config.StatusEffects.slowAndFastActions;
+
+			// Exit if no fastSlow exist
+			if (fastSlow.length === 0) return;
+			let newActions = [];
+			// Get actions
+			const actions = await Promise.all(
+				fastSlow.map(async (condition) => {
+					let id = condition.id;
+					const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? '';
+					const active = this.actors.every((actor) => {
+						return actor.effects.some((effect) => effect.statuses.some((status) => status === id) && !effect?.disabled);
+					})
+						? ' active'
+						: '';
+					const rightClick = this.isRightClick;
+					newActions.push({
+						id: id,
+						name: coreModule.api.Utils.i18n(condition.label) ?? condition.name,
+						listName: `${actionTypeName}${name}`,
+						img: coreModule.api.Utils.getImage(condition),
+						cssClass: `toggle${active}`,
+
+						onClick: async () => {
+							switch (id) {
+								case 'slowAction':
+									if (await myActor.hasCondition('slowAction')) {
+										await myActor.removeFastSlow('slowAction');
+									} else {
+										await myActor.addFastSlow('slowAction');
+									}
+									break;
+								case 'fastAction':
+									if (await myActor.hasCondition('fastAction')) {
+										await myActor.removeFastSlow('fastAction');
+									} else {
+										await myActor.addFastSlow('fastAction');
+									}
+									break;
+							}
+						},
+					});
+					return newActions;
+				})
+			);
+			// Create group data
+			const groupData = { id: 'utility', type: 'system' };
+			// Add actions to HUD
+			this.addActions(newActions, groupData);
 		}
 	};
 });
