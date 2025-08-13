@@ -618,8 +618,6 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 			delete myattributes.cost;
 			delete myattributes.hull;
 
-			// const name = coreModule.api.Utils.i18n('ALIENRPG.Stress') + ' ' + ((max > 0) ? `${value ?? 0}/${max}` : '');
-
 			// Get actions
 			const actions = Object.entries(myattributes)
 				.map((myattributes) => {
@@ -671,20 +669,15 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 			delete myattributes.manufacturer;
 			delete myattributes.damage;
 
-			// const name = coreModule.api.Utils.i18n('ALIENRPG.Stress') + ' ' + ((max > 0) ? `${value ?? 0}/${max}` : '');
-
 			// Get actions
 			const actions = Object.entries(myattributes)
 				.map((myattributes) => {
 					try {
 						const id = myattributes[0];
-						// const abbreviatedName = id.charAt(0).toUpperCase() + id.slice(1);
 						const name = game.alienrpg.config.spacecraftattributes[id] + ' ' + '-' + ' ' + this.actor.system.attributes[id].value;
 						const actionTypeName = `${coreModule.api.Utils.i18n(ACTION_TYPE[actionType])}: ` ?? '';
 						const listName = `${actionTypeName}${game.alienrpg.config.spacecraftattributes[id]}`;
 						const encodedValue = [actionType, id].join(this.delimiter);
-						// const mod = attributes[id].total
-						// const info1 = (this.actor) ? { text: (mod || mod === 0) ? `${(mod >= 0) ? '+' : ''}${mod}` : '' } : ''
 						return {
 							id,
 							name,
@@ -944,63 +937,76 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 
 		async #buildHull() {
 			const actionTypeId = 'hull';
-			// if (this.items.health === 0) return;
-			// debugger;
-
+			let actions = [];
+			let myActor = this.actor;
+			let rightClick = this.isRightClick;
 			const groupData = { id: 'utility', type: 'system' };
-
-			const value = this.actor.system.attributes?.hull.value;
+			let value = this.actor.system.attributes?.hull.value;
 			const max = this.actor.system.attributes?.hull?.max;
 
 			// Get actions
-			const id = actionTypeId;
-			const name = coreModule.api.Utils.i18n('ALIENRPG.Hull') + ' ' + (max > 0 ? `${value ?? 0}/${max}` : '');
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
-			const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
-			const encodedValue = [actionTypeId, id].join(this.delimiter);
-			const tooltip = coreModule.api.Utils.i18n('ALIENRPG.ConButtons');
-			const actions = [
-				{
-					id,
-					name,
-					listName,
-					encodedValue,
-					tooltip,
+
+			actions.push({
+				id: 'hull',
+				name: coreModule.api.Utils.i18n('ALIENRPG.Hull') + ' ' + (max > 0 ? `${value ?? 0}/${max}` : ''),
+				listName: `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`,
+				tooltip: coreModule.api.Utils.i18n('ALIENRPG.ConButtons'),
+
+				onClick: async () => {
+					if (rightClick) {
+						if (value <= 0) return;
+						value--;
+					} else {
+						if (value >= max) return;
+						value++;
+					}
+
+					let update = { system: { attributes: { [actionTypeId]: { value: value } } } };
+
+					await myActor.update(update);
 				},
-			];
+			});
 			// TAH Core method to add actions to the action list
 			this.addActions(actions, groupData);
 		}
 
 		async #buildSpacecraftDamage() {
 			const actionTypeId = 'damage';
-			// if (this.items.health === 0) return;
-			// debugger;
-
+			let actions = [];
+			let myActor = this.actor;
+			let rightClick = this.isRightClick;
 			const groupData = { id: 'utility', type: 'system' };
-
-			const value = this.actor.system.attributes?.damage.value;
+			let value = this.actor.system.attributes?.damage.value;
 			const max = this.actor.system.attributes?.damage?.max;
 
 			// Get actions
-			const id = actionTypeId;
-			const name = coreModule.api.Utils.i18n('ALIENRPG.DAMAGE') + ' ' + (max > 0 ? `${value ?? 0}/${max}` : '');
 			const actionTypeName = coreModule.api.Utils.i18n(ACTION_TYPE[actionTypeId]);
-			const listName = `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`;
-			const encodedValue = [actionTypeId, id].join(this.delimiter);
-			const tooltip = coreModule.api.Utils.i18n('ALIENRPG.ConButtons');
-			const actions = [
-				{
-					id,
-					name,
-					listName,
-					encodedValue,
-					tooltip,
+
+			actions.push({
+				id: 'damage',
+				name: coreModule.api.Utils.i18n('ALIENRPG.Damage') + ' ' + (max > 0 ? `${value ?? 0}/${max}` : ''),
+				listName: `${actionTypeName ? `${actionTypeName}: ` : ''}${name}`,
+				tooltip: coreModule.api.Utils.i18n('ALIENRPG.ConButtons'),
+
+				onClick: async () => {
+					if (rightClick) {
+						if (value <= 0) return;
+						value--;
+					} else {
+						if (value >= max) return;
+						value++;
+					}
+
+					let update = { system: { attributes: { [actionTypeId]: { value: value } } } };
+
+					await myActor.update(update);
 				},
-			];
+			});
 			// TAH Core method to add actions to the action list
 			this.addActions(actions, groupData);
 		}
+
 		async #buildStress() {
 			let actions = [];
 			const actionTypeId = 'stress';
@@ -1092,7 +1098,6 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 		}
 		async #buildMajorCrit() {
 			const actionTypeId = 'spacecraft-major';
-			// if (this.items.health === 0) return;
 			// debugger;
 
 			const groupData = { id: 'utility', type: 'system' };
@@ -1200,22 +1205,15 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 
 			const nameHtml = `<h3>${name}</h3>`;
 
-			const description =
-				tooltipData?.descriptionLocalised ?? (await TextEditor.enrichHTML(coreModule.api.Utils.i18n(tooltipData?.description ?? ''), { async: false }));
+			const description = tooltipData?.descriptionLocalised ?? (await TextEditor.enrichHTML(coreModule.api.Utils.i18n(tooltipData?.description ?? ''), { async: false }));
 
-			const rarityHtml = tooltipData?.rarity
-				? `<span class="tah-tag ${tooltipData.rarity}">${coreModule.api.Utils.i18n(RARITY[tooltipData.rarity])}</span>`
-				: '';
+			const rarityHtml = tooltipData?.rarity ? `<span class="tah-tag ${tooltipData.rarity}">${coreModule.api.Utils.i18n(RARITY[tooltipData.rarity])}</span>` : '';
 
 			const propertiesHtml = tooltipData?.properties
-				? `<div class="tah-properties">${tooltipData.properties
-						.map((property) => `<span class="tah-property">${coreModule.api.Utils.i18n(property)}</span>`)
-						.join('')}</div>`
+				? `<div class="tah-properties">${tooltipData.properties.map((property) => `<span class="tah-property">${coreModule.api.Utils.i18n(property)}</span>`).join('')}</div>`
 				: '';
 
-			const traitsHtml = tooltipData?.traits
-				? tooltipData.traits.map((trait) => `<span class="tah-tag">${coreModule.api.Utils.i18n(trait.label ?? trait)}</span>`).join('')
-				: '';
+			const traitsHtml = tooltipData?.traits ? tooltipData.traits.map((trait) => `<span class="tah-tag">${coreModule.api.Utils.i18n(trait.label ?? trait)}</span>`).join('') : '';
 
 			const traits2Html = tooltipData?.traits2
 				? tooltipData.traits2.map((trait) => `<span class="tah-tag tah-tag-secondary">${coreModule.api.Utils.i18n(trait.label ?? trait)}</span>`).join('')

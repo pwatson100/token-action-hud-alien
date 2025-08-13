@@ -78,7 +78,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 				name: coreModule.api.Utils.i18n('ALIENRPG.Utility'),
 				groups: [
 					{ ...groups.utility, nestId: 'utility_fastslow' },
-					{ ...groups.utility, nestId: 'utility_health' },
+					{ ...groups.health, nestId: 'utility_health' },
 					{ ...groups.criticalinjury, nestId: 'utility_criticalinjury' },
 				],
 			},

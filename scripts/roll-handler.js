@@ -83,15 +83,6 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 							case 'skill':
 								await this.#handleSkillAction(event, actor, actionId);
 								break;
-							// case 'conditions':
-							// 	await this.#handleConditionAction(event, actor, actionId);
-							// 	break;
-							// case 'health':
-							// 	await this.#adjustAttribute(actor, 'health', 'value');
-							// 	break;
-							// case 'stress':
-							// 	await this.#adjustAttribute(actor, 'stress', 'value');
-							// 	break;
 							case 'criticalinjury':
 								await this.#handleCritAction(actor, event);
 								break;
@@ -114,9 +105,6 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 							case 'attackroll':
 								await this.#handleCreatureAttackAction(actor, event);
 								break;
-							// case 'health':
-							// 	await this.#adjustAttribute(actor, 'health', 'value');
-							// 	break;
 							case 'criticalinjury':
 								await this.#handleCritAction(actor, event);
 								break;
@@ -141,10 +129,6 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 								}
 							}
 							break;
-						case 'hull':
-							await this.#adjustHull(actor, 'hull', 'value');
-							break;
-
 						default:
 							if (actionId === 'armorrating') {
 								await this.#handleVehicleArmorAction(event, actor, actionId);
@@ -167,9 +151,6 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 										break;
 								}
 							}
-							break;
-						case 'damage':
-							await this.#adjustHull(actor, 'damage', 'value');
 							break;
 						case 'attributes':
 							if (actionId === 'armor') {
@@ -222,6 +203,18 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 			if (!actor) return;
 			switch (actionId) {
 				case 'speed':
+					{
+						rData = {
+							roll: actor.system.attributes[actionId].value,
+							label: coreModule.api.Utils.i18n(game.alienrpg.config.creatureattributes[actionId]),
+						};
+					}
+					if (event.type === 'click') {
+						await actor.rollAbility(actor, rData);
+					} else {
+						await actor.rollAbilityMod(actor, rData);
+					}
+					break;
 				case 'armorrating':
 				case 'armorvfire':
 					{
@@ -355,145 +348,6 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 			}
 		}
 
-		/**
-		 * Handle Attribute action
-		 * @private
-		 * @param {object} event    The event
-		 * @param {object} actor    The actor
-		 * @param {string} actionId The action id
-		 */
-		// async #handleConditionAction(event, actor, actionId) {
-		// 	// debugger;
-		// 	switch (actionId) {
-		// 		case 'starving':
-		// 			await this.toggleConditionState(event, actor, 'starving', 'value');
-		// 			break;
-		// 		case 'dehydrated':
-		// 			await this.toggleConditionState(event, actor, 'dehydrated', 'value');
-		// 			break;
-		// 		case 'exhausted':
-		// 			await this.toggleConditionState(event, actor, 'exhausted', 'value');
-		// 			break;
-		// 		case 'freezing':
-		// 			await this.toggleConditionState(event, actor, 'freezing', 'value');
-		// 			break;
-		// 		case 'panicked':
-		// 			await this.toggleConditionState(event, actor, 'panic', 'value');
-		// 			break;
-		// 		case 'overwatch':
-		// 			{
-		// 				if (await actor.hasCondition('overwatch')) {
-		// 					await this.actor.removeCondition('overwatch');
-		// 				} else {
-		// 					await actor.addCondition('overwatch');
-		// 				}
-		// 			}
-		// 			break;
-		// 		case 'radiation':
-		// 			await this.toggleConditionState(event, actor, 'radiation', 'value');
-		// 			break;
-		// 	}
-		// }
-
-		// async toggleConditionState(event, actor, property, valueName) {
-		// 	let rData = [];
-		// 	let value = actor.system.general[property][valueName];
-		// 	let max = '1';
-		// 	let update = {};
-		// 	// debugger;
-		// 	switch (event.type) {
-		// 		case 'contextmenu':
-		// 			{
-		// 				switch (property) {
-		// 					case 'panic':
-		// 						{
-		// 							if (value <= 0) return;
-		// 							await actor.checkAndEndPanic(actor);
-		// 							update = {
-		// 								data: { general: { [property]: { [valueName]: 0 } } },
-		// 							};
-		// 							await actor.update(update);
-		// 						}
-		// 						break;
-		// 					case 'radiation':
-		// 						if (value <= 0) return;
-		// 						{
-		// 							rData = {
-		// 								roll: actor.system.general.radiation.value,
-		// 								label: 'radiation',
-		// 							};
-		// 							if (actor.system.general.radiation.value <= 1) {
-		// 								await actor.removeCondition('radiation');
-		// 								await actor.update({
-		// 									'system.general.radiation.value': (actor.system.general.radiation.value = 0),
-		// 								});
-		// 							} else {
-		// 								await actor.update({
-		// 									'system.general.radiation.value': actor.system.general.radiation.value - 1,
-		// 								});
-		// 							}
-		// 							await actor.createChatMessage(game.i18n.localize('ALIENRPG.RadiationReduced'), actor.id);
-		// 						}
-		// 						break;
-
-		// 					default:
-		// 						{
-		// 							if (value <= 0) return;
-		// 							value--;
-		// 							await actor.removeCondition(property);
-		// 							update = {
-		// 								data: { general: { [property]: { [valueName]: value } } },
-		// 							};
-		// 							await actor.update(update);
-		// 						}
-		// 						break;
-		// 				}
-		// 			}
-		// 			break;
-		// 		case 'click':
-		// 			switch (property) {
-		// 				case 'panic':
-		// 					{
-		// 						rData = {
-		// 							panicroll: 'true',
-		// 						};
-		// 						await actor.rollAbility(actor, rData);
-		// 					}
-		// 					break;
-		// 				case 'radiation':
-		// 					{
-		// 						rData = {
-		// 							roll: `${actor.system.general.radiation.value} `,
-		// 							label: 'Radiation',
-		// 						};
-		// 						if (actor.system.general.radiation.value === 10) {
-		// 							break;
-		// 						} else {
-		// 							await actor.rollAbility(actor, rData);
-		// 							await actor.update({
-		// 								'system.general.radiation.value': actor.system.general.radiation.value + 1,
-		// 							});
-		// 							await actor.addCondition('radiation');
-		// 						}
-		// 					}
-		// 					break;
-		// 				default:
-		// 					{
-		// 						if (value >= max) return;
-		// 						value++;
-		// 						await actor.addCondition(property);
-		// 						update = {
-		// 							data: { general: { [property]: { [valueName]: value } } },
-		// 						};
-		// 						await actor.update(update);
-		// 					}
-		// 					break;
-		// 			}
-		// 		default:
-		// 			break;
-		// 	}
-		// }
-
 		async #handleCreatureAttackAction(actor, event) {
 			const rAttData = { atttype: actor.system.rTables };
 			switch (event.type) {
@@ -543,41 +397,6 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
 				default:
 					break;
 			}
-		}
-
-		// async #adjustAttribute(actor, property, valueName) {
-		// 	let value = actor.system.header[property][valueName];
-		// 	let max = actor.system.header[property].max;
-
-		// 	if (this.rightClick) {
-		// 		if (value <= 0) return;
-		// 		value--;
-		// 	} else {
-		// 		if (value >= max) return;
-		// 		value++;
-		// 	}
-
-		// 	let update = { system: { header: { [property]: { [valueName]: value } } } };
-
-		// 	await actor.update(update);
-		// }
-		async #adjustHull(actor, property, valueName) {
-			let value = actor.system.attributes[property][valueName];
-			let max = actor.system.attributes[property].max;
-
-			if (this.rightClick) {
-				if (value <= 0) return;
-				value--;
-			} else {
-				if (value >= max) return;
-				value++;
-			}
-
-			let update = {
-				data: { attributes: { [property]: { [valueName]: value } } },
-			};
-
-			await actor.update(update);
 		}
 
 		/**
